@@ -17,4 +17,4 @@ setup(name=app_name,
       description=app_name.replace("_", " "),
       author="rozig",
       options=dict(build_exe=buildOptions),
-      executables=[Executable("xticket_joongrang.py"), Executable("sungnam.py"), Executable("k2.py")])
+      executables=[Executable("gang_dong.py"), Executable("joong_rang.py"), Executable("sungnam.py"), Executable("k2.py")])
