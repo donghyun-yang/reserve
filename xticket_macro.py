@@ -8,6 +8,7 @@ from selenium.webdriver.chrome.options import Options
 # from selenium.webdriver.support.ui import WebDriverWait
 # from selenium.webdriver.common.by import By
 # from selenium.webdriver.support import expected_conditions as EC
+from telegram_util import TelegramUtil
 
 
 class XTicketMacro:
@@ -22,10 +23,16 @@ class XTicketMacro:
     browser = webdriver.Chrome(executable_path="chromedriver.exe", options=chrome_options)
     browser.set_window_size(400, 940)
 
-    def __init__(self, url: str, target_day: int = 4, max_month_cnt: int = 2):
+    def __init__(self, camp_name: str, url: str, telegram_token: str, telegram_chat_id: str,
+                 target_day: int = 6, max_month_cnt: int = 2):
+        self.camp_name = camp_name
         self.url = url
+        self.telegram_token = telegram_token
+        self.telegram_chat_id = telegram_chat_id
+        self.telegram_util = TelegramUtil(self.telegram_token, self.telegram_chat_id)
         self.target_day = target_day  # sun : 0, sat: 6
         self.max_month_cnt = max_month_cnt  # 몇 개월치에 대해 확인 할 것인지
+        self.current_month_text: str = "N/A"
 
     def open_browser(self):
         self.browser.get(self.url)
@@ -68,6 +75,9 @@ class XTicketMacro:
         try:
             self.__load_tr_list(idx_calendar_list)
 
+            self.current_month_text = self.__get_current_month()
+            print("현재 월 : " + self.current_month_text)
+
             for number_of_week in range(0, self.tr_list.__len__()):
                 tr = self.tr_list[number_of_week]
                 number_of_week = number_of_week + 1
@@ -84,7 +94,7 @@ class XTicketMacro:
                     if number_of_week == 1:
                         print(str(number_of_week) + '번째 주차에' + str(self.target_day) + '번째 요일이 없음!')
                     else:
-                        print('해당 월 ' + str(number_of_week) + '번째 주차까지 모든 주 탐색 완료, 다음월로 이동될 거 임')
+                        print(self.current_month_text + str(number_of_week) + '번째 주차까지 모든 주 탐색 완료, 다음월로 이동될 거 임')
                         break
                 else:
                     if current_date.get_attribute('class').find('bookable') != -1:
@@ -107,8 +117,22 @@ class XTicketMacro:
 
                             if bookable_list.__len__() > 0:
                                 for bookable in bookable_list:
-                                    print(bookable.text)
-                                    print(current_date_text + '일 ' + product_group_text + ' 예약가능!!!')
+                                    message = "=============\n" \
+                                              "[{camp_name}] {current_month_text} {current_date_text} 일 - " \
+                                              "{product_group_text} 예약가능!!!'\n" \
+                                              "{url}'\n" \
+                                              "-------------\n" \
+                                              "{bookable}\n" \
+                                              "=============\n" \
+                                        .format(camp_name=self.camp_name,
+                                                current_month_text=self.current_month_text,
+                                                current_date_text=current_date_text,
+                                                product_group_text=product_group_text,
+                                                url=self.url,
+                                                bookable=bookable.text)
+
+                                    self.telegram_util.send_message(message=message)
+                                    print(message)
                             else:
                                 print(current_date_text + '일 ' + product_group_text + ' 매진')
                     else:
@@ -151,3 +175,8 @@ class XTicketMacro:
                     print('월 탐색 정상 종료')
 
             print('==================== 모든 대상 월 탐색 완료 ===================')
+
+    def __get_current_month(self) -> str:
+        return \
+            self.browser.find_element_by_css_selector("#selectStep > li.step1.on > div:nth-child(2) > h2 > span").text
+
