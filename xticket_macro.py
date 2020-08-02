@@ -149,32 +149,38 @@ class XTicketMacro:
 
     def run(self):
         while 1:
-            self.open_browser()
+            try:
+                self.open_browser()
 
-            # 공지사항 닫기
-            self.close_notices()
+                # 공지사항 닫기
+                self.close_notices()
 
-            # List로 보기
-            self.browser.find_element_by_css_selector('h3.listShow a').click()
-            time.sleep(5)
+                # List로 보기
+                self.browser.find_element_by_css_selector('h3.listShow a').click()
+                time.sleep(5)
 
-            month_cnt = 0
+                month_cnt = 0
 
-            for i in range(0, self.max_month_cnt):
-                idx_calendar_list = (month_cnt + 2) % 2
+                for i in range(0, self.max_month_cnt):
+                    idx_calendar_list = (month_cnt + 2) % 2
 
-                if month_cnt > 0:
-                    self.move_to_next_month(idx_calendar_list)
+                    if month_cnt > 0:
+                        self.move_to_next_month(idx_calendar_list)
 
-                month_cnt = month_cnt + 1
+                    month_cnt = month_cnt + 1
 
-                if not self.check_bookable(idx_calendar_list):
-                    print('월 탐색 비정상 종료')
-                    break
-                else:
-                    print('월 탐색 정상 종료')
+                    if not self.check_bookable(idx_calendar_list):
+                        print('월 탐색 비정상 종료')
+                        break
+                    else:
+                        print('월 탐색 정상 종료')
 
-            print('==================== 모든 대상 월 탐색 완료 ===================')
+                print('==================== 모든 대상 월 탐색 완료 ===================')
+            except Exception as e:
+                error_message = "[" + self.camp_name + "] Error is occurred!\n" \
+                                "Exception : " + str(e)
+                print(error_message)
+                self.telegram_util.send_message(error_message)
 
     def __get_current_month(self) -> str:
         return \
