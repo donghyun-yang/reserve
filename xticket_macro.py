@@ -12,16 +12,6 @@ from telegram_util import TelegramUtil
 
 
 class XTicketMacro:
-    mobile_emulation = {
-        "deviceMetrics": {"width": 360, "height": 900, "pixelRatio": 3.0},
-        "userAgent": "Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 BUILD/JOP400) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19"
-    }
-
-    chrome_options = Options()
-    chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
-
-    browser = webdriver.Chrome(executable_path="chromedriver.exe", options=chrome_options)
-    browser.set_window_size(400, 940)
 
     def __init__(self, camp_name: str, url: str, telegram_token: str, telegram_chat_id: str,
                  target_day: int = 6, max_month_cnt: int = 2):
@@ -33,8 +23,21 @@ class XTicketMacro:
         self.target_day = target_day  # sun : 0, sat: 6
         self.max_month_cnt = max_month_cnt  # 몇 개월치에 대해 확인 할 것인지
         self.current_month_text: str = "N/A"
+        self.browser = None
 
     def open_browser(self):
+        mobile_emulation = {
+            "deviceMetrics": {"width": 360, "height": 900, "pixelRatio": 3.0},
+            "userAgent": "Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 BUILD/JOP400) AppleWebKit/535.19 (KHTML, "
+                         "like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19 "
+        }
+
+        chrome_options = Options()
+        chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
+
+        self.browser = webdriver.Chrome(executable_path="chromedriver.exe", options=chrome_options)
+        self.browser.set_window_size(400, 940)
+
         self.browser.get(self.url)
         time.sleep(5)
         self.pass_office_blocking()
@@ -65,11 +68,13 @@ class XTicketMacro:
 
     def close_notices(self):
         self.browser.execute_script(
-            "const buttonList = $('div.modalCntLayer div.wrapNoticeLayer div.wrapBtnBottom button.btnTy1.btnCancel'); for (var i=buttonList.length-1; i>=0; i--) { buttonList[i].click() }")  # mobile
+            "const buttonList = $('div.modalCntLayer div.wrapNoticeLayer div.wrapBtnBottom button.btnTy1.btnCancel'); "
+            "for (var i=buttonList.length-1; i>=0; i--) { buttonList[i].click() }")  # mobile
 
     def __load_tr_list(self, idx_calendar_list):
-        self.tr_list: list = self.browser.find_elements_by_css_selector('div#calendarWrap.rollPanel div table.calendarList')[
-            idx_calendar_list].find_elements_by_css_selector('tbody tr')
+        self.tr_list: list = self.browser.find_elements_by_css_selector(
+            'div#calendarWrap.rollPanel div table.calendarList'
+        )[idx_calendar_list].find_elements_by_css_selector('tbody tr')
 
     def check_bookable(self, idx_calendar_list):
         try:
@@ -94,14 +99,12 @@ class XTicketMacro:
                     if number_of_week == 1:
                         print(str(number_of_week) + '번째 주차에' + str(self.target_day) + '번째 요일이 없음!')
                     else:
-                        print(self.current_month_text + str(number_of_week) + '번째 주차까지 모든 주 탐색 완료, 다음월로 이동될 거 임')
+                        print(self.current_month_text + str(number_of_week)
+                              + '번째 주차까지 모든 주 탐색 완료, 다음월로 이동될 거 임')
                         break
                 else:
                     if current_date.get_attribute('class').find('bookable') != -1:
                         print(current_date_text + '일 click')
-                        # XPATH에서 index는 0부터가 아니고 1부터임
-                        # 잘 안됨... 그냥 move to next month 후 time.sleep(3)이 잘됨
-                        # WebDriverWait(self.browser, 10).until(EC.element_to_be_clickable(By.XPATH, "//div[@id='calendarWrap']/div/table[@class='calendarList'][" + str(idx_calendar_list+1) + "]/tbody/tr[" + str(cnt) + "]/td[" + str(TARGET_DAY+1) + "]"))
 
                         current_date.click()
                         time.sleep(1)
@@ -178,11 +181,10 @@ class XTicketMacro:
                 print('==================== 모든 대상 월 탐색 완료 ===================')
             except Exception as e:
                 error_message = "[" + self.camp_name + "] Error is occurred!\n" \
-                                "Exception : " + str(e)
+                                                       "Exception : " + str(e)
                 print(error_message)
                 self.telegram_util.send_message(error_message)
 
     def __get_current_month(self) -> str:
         return \
             self.browser.find_element_by_css_selector("#selectStep > li.step1.on > div:nth-child(2) > h2 > span").text
-
