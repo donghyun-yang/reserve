@@ -17,4 +17,5 @@ setup(name=app_name,
       description=app_name.replace("_", " "),
       author="rozig",
       options=dict(build_exe=buildOptions),
-      executables=[Executable("gang_dong.py"), Executable("joong_rang.py"), Executable("sungnam.py"), Executable("k2.py")])
+      executables=[Executable("gang_dong.py"), Executable("joong_rang.py"), Executable("gong_reung.py"),
+                   Executable("so_pung.py")])

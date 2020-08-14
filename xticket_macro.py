@@ -34,10 +34,12 @@ class XTicketMacro:
 
         chrome_options = Options()
         chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
+        chrome_options.add_argument('--disable-gpu')
 
         self.browser = webdriver.Chrome(executable_path="chromedriver.exe", options=chrome_options)
         self.browser.set_window_size(400, 940)
 
+    def go_to_url(self):
         self.browser.get(self.url)
         time.sleep(5)
         self.pass_office_blocking()
@@ -144,16 +146,16 @@ class XTicketMacro:
         except exceptions.StaleElementReferenceException as e:
             raise e
         except Exception as e:
-            print('Unexpected error:', sys.exc_info())
-            print('Exception:', e)
-            return False
+            raise e
 
         return True
 
     def run(self):
+        self.open_browser()
+
         while 1:
             try:
-                self.open_browser()
+                self.go_to_url()
 
                 # 공지사항 닫기
                 self.close_notices()
@@ -180,8 +182,10 @@ class XTicketMacro:
 
                 print('==================== 모든 대상 월 탐색 완료 ===================')
             except Exception as e:
-                error_message = "[" + self.camp_name + "] Error is occurred!\n" \
-                                                       "Exception : " + str(e)
+                error_message = "[{camp_name}] Error is occurred!\n" \
+                                "Exception : {exception}\n" \
+                                "sys.exec_info : {exc_info}".format(camp_name=self.camp_name, exception=str(e),
+                                                                    exc_info=sys.exc_info())
                 print(error_message)
                 self.telegram_util.send_message(error_message)
 
