@@ -22,18 +22,17 @@ class InterparkMacro:
     MAX_TRY_TO_CATCH_A_SEAT = 180  # 최대 몇번 다시 잡을지 (세션 유지를 위해) : INTERVAL * 회수만큼의 시간 만큼 retry 됨
     LOGIN_URL = \
         "https://ticket.interpark.com/Gate/TPLogin.asp?CPage=B&MN=Y&tid1=main_gnb&tid2=right_top&tid3=login&tid4=login"
-    PROUDCT_GROUP_KEYWORD = "ALL"
     RESERVE_RANGE = "1박 2일"
 
     def __init__(self, url: str, camp_name: str, telegram_token: str, telegram_chat_id: str,
                  target_day: str = TARGET_DAY, is_catch_a_seat: bool = True,
-                 product_group_keyword: str = PROUDCT_GROUP_KEYWORD, reserve_range: str = RESERVE_RANGE):
+                 exclude_keyword: str = "", reserve_range: str = RESERVE_RANGE):
         self.browser = None
         self.camp_name = camp_name
         self.url = url
         self.target_day = target_day
         self.is_catch_a_seat = is_catch_a_seat
-        self.product_group_keyword = product_group_keyword
+        self.exclude_keyword = exclude_keyword
         self.reserve_range = reserve_range
         self.window_name = None
         self.telegram_token = telegram_token
@@ -131,10 +130,9 @@ class InterparkMacro:
                             print("product_group_text is EMPTY!!!")
                             continue
 
-                        # 필터링 : ALL 이면 필터링하지 않음, 상품 그룹 필터링 (카라반, 캠핑구역 등)
-                        if self.product_group_keyword != "ALL" and product_group_text.find(
-                                self.product_group_keyword) < 0:
-                            print("Cannot find {}, skip to {}".format(self.product_group_keyword, product_group_text))
+                        exclude_keyword_list: [str] = self.exclude_keyword.split('|')
+
+                        if self.is_exclude(exclude_keyword_list, product_group_text):
                             continue
 
                         if product_group_text.find('매진') != -1:
@@ -264,3 +262,12 @@ class InterparkMacro:
         self.browser.execute_script("window.close()")
         self.browser.switch_to.window(self.window_name)
         return
+
+    def is_exclude(self, exclude_keyword_list, product_group_text):
+        # 상품 그룹에서 exclude keyword 필터링 (카라반@폴딩)
+        print("current product name : {}".format(product_group_text))
+        for exclude_keyword in exclude_keyword_list:
+            if product_group_text.find(exclude_keyword) > -1:
+                print("this product is include the 'exclude keyword({})'.".format(exclude_keyword))
+                return True
+        return False
