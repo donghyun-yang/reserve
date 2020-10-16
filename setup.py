@@ -1,11 +1,19 @@
 from cx_Freeze import setup, Executable
 import os
-#import platform
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-include_files = [(os.path.join(CURRENT_PATH, "chromedriver.exe"), "chromedriver.exe")]
+DRIVER_PATH = os.path.join("driver")
+include_files = [DRIVER_PATH]
+
 #if platform.system() == "Linux":
 #      include_files.append((os.path.join(CURRENT_PATH, "lib", "libpython3.5m.so.1.0"), "libpython3.5m.so.1.0"))
+
+executable_list = [
+    Executable(os.path.join(CURRENT_PATH, "reserve", "runner", "xticket", "gang_dong.py")),
+    Executable(os.path.join(CURRENT_PATH, "reserve", "runner", "xticket", "joong_rang.py")),
+    Executable(os.path.join(CURRENT_PATH, "reserve", "runner", "interpark", "gong_reung.py")),
+    Executable(os.path.join(CURRENT_PATH, "reserve", "runner", "interpark", "so_pung.py"))
+]
 
 buildOptions = dict(include_files=include_files,
                     packages=["sys"])
@@ -17,5 +25,4 @@ setup(name=app_name,
       description=app_name.replace("_", " "),
       author="rozig",
       options=dict(build_exe=buildOptions),
-      executables=[Executable("gang_dong.py"), Executable("joong_rang.py"), Executable("gong_reung.py"),
-                   Executable("so_pung.py")])
+      executables=executable_list)

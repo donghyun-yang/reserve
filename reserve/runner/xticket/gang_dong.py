@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from xticket_macro import XTicketMacro
-
+from reserve.macro.xticket_macro.xticket_macro import XTicketMacro
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -20,7 +19,7 @@ def main():
         print("TELEGRAM CHAT_ID : " + TELEGRAM_CHAT_ID)
 
     url = URL
-    XTicketMacro(NAME, url, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID).run()
+    XTicketMacro(NAME, url, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID).process()
 
 
 if __name__ == '__main__':

@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
 import sys
 
-from selenium import webdriver
+
 from selenium.common import exceptions
 from selenium.webdriver.chrome.options import Options
 import time
 
+
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from telegram_util import TelegramUtil
+from reserve.macro.reserve_macro import ReserveMacro
 
 
-class InterparkMacro:
+class InterparkMacro(ReserveMacro):
     WAITING_TIME_FOR_LOGIN = 60  # 로그인을 기다리는 시간 : 60
     NUMBER_OF_TARGET_WEEKS = 5  # 현재 날짜 기준 몇주(week)를 대상으로 잡을지 : 5
     TARGET_DAY = 'sat'  # 요일
@@ -25,34 +25,30 @@ class InterparkMacro:
     RESERVE_RANGE = "1박 2일"
 
     def __init__(self, url: str, camp_name: str, telegram_token: str, telegram_chat_id: str,
-                 target_day: str = TARGET_DAY, is_catch_a_seat: bool = True,
-                 exclude_keyword: str = "", reserve_range: str = RESERVE_RANGE):
-        self.browser = None
-        self.camp_name = camp_name
-        self.url = url
+                 target_day: str = TARGET_DAY, is_catch_a_seat: bool = True, exclude_keyword: str = "",
+                 reserve_range: str = RESERVE_RANGE):
+        chrome_options = Options()
+        chrome_options.add_argument('--disable-gpu')
+
+        super().__init__(url, camp_name, telegram_token, telegram_chat_id, chrome_options)
         self.target_day = target_day
         self.is_catch_a_seat = is_catch_a_seat
         self.exclude_keyword = exclude_keyword
         self.reserve_range = reserve_range
-        self.window_name = None
-        self.telegram_token = telegram_token
-        self.telegram_chat_id = telegram_chat_id
-        self.telegram_util = TelegramUtil(self.telegram_token, self.telegram_chat_id)
 
-    def open_borwser(self):
-        chrome_options = Options()
-        chrome_options.add_argument('--disable-gpu')
-        self.browser = webdriver.Chrome(executable_path="chromedriver.exe", options=chrome_options)
+    def _run(self):
+        self._open_browser()
+        if self.__login():
+            self.__check_bookable()
+        else:
+            self.is_catch_a_seat = False
+            self.__check_bookable()
+
+    def _open_browser(self):
+        super()._open_browser()
         self.browser.set_window_size(1600, 900)
-        self.window_name = self.browser.window_handles[0]
-        print("window_name : " + self.window_name)
 
-    def run(self):
-        self.open_borwser()
-        if self.login():
-            self.check_bookable()
-
-    def login(self):
+    def __login(self):
         # 인터파크 로그인
         self.browser.get(self.LOGIN_URL)
         self.browser.execute_script("snsAuthPopup('naver');")
@@ -68,7 +64,7 @@ class InterparkMacro:
             print(str(self.WAITING_TIME_FOR_LOGIN) + "초 안에 로그인되지 않음")
             return False
 
-    def check_bookable(self):
+    def __check_bookable(self):
         while 1:
             try:
                 # 상품으로 이동
@@ -132,7 +128,7 @@ class InterparkMacro:
 
                         exclude_keyword_list: [str] = self.exclude_keyword.split('|')
 
-                        if self.is_exclude(exclude_keyword_list, product_group_text):
+                        if self.__is_exclude(exclude_keyword_list, product_group_text):
                             continue
 
                         if product_group_text.find('매진') != -1:
@@ -148,21 +144,15 @@ class InterparkMacro:
                             self.telegram_util.send_message(message)
 
                             if self.is_catch_a_seat:
-                                self.catch_a_seat(product_group_idx)
+                                self.__catch_a_seat(product_group_idx)
 
             except Exception as e:
-                error_message = "[{camp_name}] Error is occurred!\n" \
-                                "Exception : {exception}\n" \
-                                "sys.exec_info : {exc_info}".format(camp_name=self.camp_name, exception=str(e),
-                                                                    exc_info=sys.exc_info())
-                print(error_message)
-                self.telegram_util.send_message(error_message)
-                
                 # 팝업 관련 에러인 경우 대비하여 기존 윈도우로 전환
                 self.browser.switch_to.window(self.window_name)
                 time.sleep(1)
+                raise e
 
-    def catch_a_seat(self,  product_group_idx: int):
+    def __catch_a_seat(self, product_group_idx: int):
         # 예약 팝업 띄우기
         try:
             print('예약하기 click')
@@ -263,7 +253,8 @@ class InterparkMacro:
         self.browser.switch_to.window(self.window_name)
         return
 
-    def is_exclude(self, exclude_keyword_list, product_group_text):
+    @staticmethod
+    def __is_exclude(exclude_keyword_list, product_group_text):
         # 상품 그룹에서 exclude keyword 필터링 (카라반@폴딩)
         print("current product name : {}".format(product_group_text))
         for exclude_keyword in exclude_keyword_list:

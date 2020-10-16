@@ -1,6 +1,6 @@
 import os
 
-from interpark_macro import InterparkMacro
+from reserve.macro.interpark_macro.interpark_macro import InterparkMacro
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -14,7 +14,7 @@ def main():
 
     # interpark_macro.TRY_TO_CATCH_INTERVAL = 3
     # interpark_macro.MAX_TRY_TO_CATCH_A_SEAT = 1
-    interpark_macro.run()
+    interpark_macro.process()
 
 
 if __name__ == '__main__':
