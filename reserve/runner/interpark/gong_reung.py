@@ -7,7 +7,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 
 def main():
-    url = "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=20003498"
+    url = "http://ticket.interpark.com/Ticket/Goods/GoodsInfo.asp?GoodsCode=20008285"
     interpark_macro = InterparkMacro(url, camp_name="공릉캠핑장", is_catch_a_seat=True,
                                      telegram_token=TELEGRAM_TOKEN, telegram_chat_id=TELEGRAM_CHAT_ID,
                                      target_day="sat", exclude_keyword="카라반|폴딩")
