@@ -1,0 +1,3 @@
+cx-Freeze
+requests
+selenium
